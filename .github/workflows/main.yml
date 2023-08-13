@@ -47,5 +47,5 @@ jobs:
       - name: Deploy AWS Infra
         run: sls deploy
 
-      - name: Destroy AWS Infra
-        run: sls remove
+      # - name: Destroy AWS Infra
+      #   run: sls remove
