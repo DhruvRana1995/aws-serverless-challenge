@@ -3,10 +3,17 @@ name: aws-sls-rest-api-deployment
 on: 
   push:
     branches:
-        main
+      - 'main'
+      - 'dev'
+      - 'test'
+  pull_request:
+    branches:    
+      - 'main'
+      - 'dev'
+      - 'test'
   
 jobs:
-  lambda-deploy:
+  sls-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout to repo
@@ -20,8 +27,22 @@ jobs:
       - name: Install serverless globally
         run: npm install -g serverless
       
-      - name: Configure serverless authentication
-        run: sls config credentials --provider aws --key ${{ secrets.AWS_ACCESS_KEY_ID }} --secret ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - name: Configure serverless authentication as per Infra env
+        run: |
+          if [[ "${{github.base_ref}}" == "main" || "${{github.ref}}" == "refs/heads/main" ]]; then
+            echo "Setting up production AWS Profile."
+            sls config credentials --provider aws --key ${{ secrets.AWS_ACCESS_KEY_ID_PROD }} --secret ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}
+          fi
+
+          if [[ "${{github.base_ref}}" == "dev" || "${{github.ref}}" == "refs/heads/dev" ]]; then
+            echo "Setting up dev env AWS Profile."
+            sls config credentials --provider aws --key ${{ secrets.AWS_ACCESS_KEY_ID_DEV }} --secret ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
+          fi
+
+          if [[ "${{github.base_ref}}" == "test" || "${{github.ref}}" == "refs/heads/test" ]]; then
+            echo "Setting up test env AWS Profile."
+            sls config credentials --provider aws --key ${{ secrets.AWS_ACCESS_KEY_ID_TEST }} --secret ${{ secrets.AWS_SECRET_ACCESS_KEY_TEST }}
+          fi
 
       - name: Deploy AWS Infra
         run: sls deploy
