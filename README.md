@@ -1,4 +1,4 @@
-# aws-serverless-challenge
+# AWS Serverless Code Challenge
 
 
 Serverless IAC implementation code challenge along with NodeJs REST API on AWS Serverless Infra (Lambda, API Gw &amp; DynamoDB).)
