@@ -94,56 +94,6 @@ module.exports.getOrderByOrderNo = (event, context, callback) => {
   })
 };
 
-module.exports.filterOrdersByUserName = (event, context, callback) =>
-{
-    var username = event.pathParameters.username;
-    if(!username || username.trim() == "")
-    {
-      return callback(null, response(400, "{username} cannot be null when filtering orders by date"));
-    }
-    var query = {
-        TableName : tableName,
-        IndexName : "UserName_Index",
-        FilterExpression : "UserName = :username",
-        ExpressionAttributeValues : {
-            ":username" : username
-        },
-        ProjectionAttributes : "OrderNo, Email, Address"
-    };
-
-    return order_table.scan(query).promise()
-    .then((res) => {       
-        callback(null, response(200, result));
-    })
-    .catch((err) => {
-        callback(null, response(err.StatusCode, err))
-    });
-};
-
-module.exports.filterOrdersByCreatAtDate = (event, context, callback) => {
-  const createAt = event.pathParameters.createddate;
-  if(!createAt || createAt.trim() === "")
-  {
-    return callback(null, response(400, "Date cannot be null when filtering orders by date"));
-  }
-  const query = {
-      TableName : tableName,
-      IndexName : "CreateAt_Index",
-      FilterExpression : "CreateAt <= :createAt",
-      ProjectionAttributes : "UserName, OrderNo, Email, Address",
-      ExpressionAttributeValues : {
-          ":createAt" : new Date(new Date(createAt).setHours(23,59,59,999)).toISOString()
-      }
-  };
-  return order_table.scan(query).promise()
-  .then((res) => {
-      callback(null, response(200, res.Items));
-  })
-  .catch((err) => {
-      callback(null, response(err.StatusCode, err));
-  });
-};
-
 module.exports.updateItem = (inputevent, context, callbackMage) => {
   var order_no = inputevent.pathParameters.orderno;
   const {UserName, Email, Address, CreateAt}  = JSON.parse(inputevent.body);
@@ -170,38 +120,6 @@ module.exports.updateItem = (inputevent, context, callbackMage) => {
     callbackMage(null, response(err.StatusCode, err));
   })
 }
-
-module.exports.selectOrdersWithinAMonthByGivenDate = (event, context, callback) =>
-{
-  const {UserName, CreateAt} = JSON.parse(event.body);
-  var start_date = new Date(CreateAt);
-  start_date = start_date.setMonth(start_date.getMonth() - 1);
-  const previous_month = new Date(start_date).toISOString();
-  const given_datetime = new Date(new Date(CreateAt).setHours(23,59,59,999)).toISOString();
-  var filter_query = {
-    TableName : tableName,
-    IndexName : "CreateAtLocal_Index",
-    KeyConditionExpression : "#username = :username AND #createat BETWEEN :previous_month AND :given_date",
-    ExpressionAttributeNames : {
-       "#createat" : "CreateAt",
-       "#username" : "UserName"
-    },
-    ExpressionAttributeValues : {
-      ":previous_month" : previous_month,
-      ":given_date" : given_datetime,
-      ":username" : UserName
-    },
-    ProjectionAttributes : "OrderNo, UserName, Address, Email"
-  };
-
-  return order_table.query(filter_query).promise()
-  .then((res) => {
-    callback(null, response(200, res.Items));
-  })
-  .catch((err) => {
-    callback(null, response(err.StatusCode, err));
-  });
-};
 
 module.exports.deleteItem = (event, context, callback) => {
   var username = event.pathParameters.username;
